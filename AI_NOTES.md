@@ -4,7 +4,7 @@
 
 ### Tools
 - IDE: Codex.
-- Model: GPT-6
+- Model: GPT-5.6
 - Unity Official Skills. Codex plugin. Package com.unity.pipeline
 
 ### Architecture
