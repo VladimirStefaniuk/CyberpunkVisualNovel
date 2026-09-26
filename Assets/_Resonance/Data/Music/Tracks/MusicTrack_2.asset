@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 719383b2b74654fbaaa00cac6fb38026, type: 3}
+  m_Name: MusicTrack_2
+  m_EditorClassIdentifier: 
+  stableId: d5e625c1ef9244163be86bd940f7880e
+  trackTitle: Emotion
+  artistName: David Fesliyan
+  audioClip: {fileID: 8300000, guid: f4d6a50b318d44c3fbf1966d7b63191e, type: 3}
