@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 
@@ -19,11 +20,26 @@ public sealed class MusicPlayerView : MonoBehaviour
     [SerializeField] private GameObject pauseVisual;
 
     [Header("Progress (Optional)")]
-    [Tooltip("Optional read-only progress Slider. Its value is set without invoking callbacks.")]
+    [Tooltip("Optional Slider that displays playback progress and requests a seek when the user drags it.")]
     [SerializeField] private UnityEngine.UI.Slider progressSlider;
 
     [Tooltip("Optional filled Image used for read-only playback progress.")]
     [SerializeField] private UnityEngine.UI.Image progressFillImage;
+
+    /// <summary>Raised only when the user changes the progress Slider.</summary>
+    public event Action<float> ProgressChanged;
+
+    private void Awake()
+    {
+        if (progressSlider != null)
+            progressSlider.onValueChanged.AddListener(NotifyProgressChanged);
+    }
+
+    private void OnDestroy()
+    {
+        if (progressSlider != null)
+            progressSlider.onValueChanged.RemoveListener(NotifyProgressChanged);
+    }
 
     public void SetTrackInfo(string trackTitle, string artistName)
     {
@@ -56,6 +72,11 @@ public sealed class MusicPlayerView : MonoBehaviour
         SetTrackInfo(string.Empty, string.Empty);
         SetPlaybackState(false);
         SetProgress(0f);
+    }
+
+    private void NotifyProgressChanged(float normalizedProgress)
+    {
+        ProgressChanged?.Invoke(Mathf.Clamp01(normalizedProgress));
     }
 
     private static void SetActiveIfNeeded(GameObject target, bool active)

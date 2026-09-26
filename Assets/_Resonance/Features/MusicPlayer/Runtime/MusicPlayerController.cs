@@ -17,7 +17,7 @@ public sealed class MusicPlayerController : MonoBehaviour
     [Tooltip("Playback service that owns the music AudioSource.")]
     [SerializeField] private MusicPlaybackService playbackService;
 
-    [Tooltip("View that presents track metadata, playback state, and read-only progress.")]
+    [Tooltip("View that presents track metadata, playback state, and user-seekable progress.")]
     [SerializeField] private MusicPlayerView view;
 
     private MusicTrackDefinition _selectedTrack;
@@ -28,6 +28,18 @@ public sealed class MusicPlayerController : MonoBehaviour
 
     public MusicTrackDefinition SelectedTrack => _selectedTrack;
     public int CurrentTrackIndex => _currentTrackIndex;
+
+    private void Awake()
+    {
+        if (view != null)
+            view.ProgressChanged += SeekToNormalizedPosition;
+    }
+
+    private void OnDestroy()
+    {
+        if (view != null)
+            view.ProgressChanged -= SeekToNormalizedPosition;
+    }
 
     private void Start()
     {
@@ -82,6 +94,19 @@ public sealed class MusicPlayerController : MonoBehaviour
     public void PreviousTrack()
     {
         CycleTrack(-1, "PreviousTrack");
+    }
+
+    private void SeekToNormalizedPosition(float normalizedPosition)
+    {
+        if (!CanControlSelectedTrack() || playbackService.CurrentTrack != _selectedTrack)
+            return;
+
+        if (!playbackService.SeekToNormalizedPosition(normalizedPosition))
+            return;
+
+        // A completed track can be replayed after its handle is dragged away from the end.
+        _completedNaturally = false;
+        RefreshPlaybackPresentation();
     }
 
     private void Initialize()

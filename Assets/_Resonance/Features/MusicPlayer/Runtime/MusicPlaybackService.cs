@@ -72,6 +72,28 @@ public sealed class MusicPlaybackService : MonoBehaviour
         LogDiagnostic($"Resume {GetPlaybackSnapshot()}");
     }
 
+    /// <summary>Moves the loaded track to a normalized position without changing its play or pause state.</summary>
+    public bool SeekToNormalizedPosition(float normalizedPosition)
+    {
+        if (!HasLoadedTrack)
+        {
+            LogDiagnostic($"Seek ignored reason=NoLoadedTrack normalized={normalizedPosition:F3}");
+            return false;
+        }
+
+        float duration = audioSource.clip.length;
+        if (duration <= 0f)
+        {
+            LogDiagnostic($"Seek ignored reason=InvalidDuration normalized={normalizedPosition:F3}");
+            return false;
+        }
+
+        float clampedPosition = Mathf.Clamp01(normalizedPosition);
+        audioSource.time = clampedPosition * duration;
+        LogDiagnostic($"Seek normalized={clampedPosition:F3} {GetPlaybackSnapshot()}");
+        return true;
+    }
+
     /// <summary>Stops and rewinds the selected track. Resume only applies to paused playback.</summary>
     public void Stop()
     {
