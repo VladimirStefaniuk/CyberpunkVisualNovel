@@ -1,3 +1,6 @@
 {
-    "name": "Resonance.Runtime"
+    "name": "Resonance.Runtime",
+    "references": [
+        "Unity.TextMeshPro"
+    ]
 }
