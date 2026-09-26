@@ -28,7 +28,34 @@ Human:
 - TBD
 
 ### Third-Party Packages
-- None
+- Initial structure setup added none. Human installed `com.unity.ugui` 2.0.0 for the static scene; AI did not install packages.
 
 ### Initial Structure Setup
 - AI was used to create the initial project structure from the human-defined architecture in AGENTS.md.
+
+### Static Scene Foundation (2026-09-23)
+- AI created and saved `Assets/_Resonance/Scenes/DeveloperTest.unity` in the live Unity Editor. It contains Environment/Test_BG, a Main Camera, and UI/Canvas/DialogueMusicLayout with DialoguePanel and MusicPlayer.
+- After the human installed uGUI, AI configured screen-space canvases and CanvasScalers at 1920x1080 with Match Width Or Height 0.5. Test_BG uses the supplied texture with an Envelope Parent aspect fitter at 16:9; its source image was not changed.
+- The centered bottom layout uses a HorizontalLayoutGroup with a 36-unit gap, an 820x360 dialogue card, and a 468x336 MusicPlayer image placeholder. The dialogue stub uses the supplied Anton and Noto Sans fonts. No supplied dialogue UI stub asset was present in Assets, so AI used simple placeholder copy and styling.
+- AI first tried adding RawImage alongside Image, used enum spellings rejected by Unity, and passed a screenshot path outside the project root. Unity Console responses exposed these mistakes; AI removed the conflicting Image first, used the valid enum display names, and captured under a temporary Assets folder. The task-generated Console entries and captures were cleared after verification.
+- Unity 6000.0.84f1 reported no scripts needed recompilation. Play Mode captures at 1280x720, 1920x1080, 1920x1200, 2560x1080, and 3840x2160 showed the background filling with aspect-preserving crop and the panels inside the screen without overlap.
+- No playback, ScriptableObjects, services, controllers, or detailed MusicPlayer hierarchy were added.
+
+### Supplied Dialogue UI Stub (2026-09-24)
+- The supplied `DialogueUI_StubIn.png` was added to the project after the initial scene setup. It now replaces the temporary dialogue card via a RawImage in DeveloperTest; the two placeholder text overlays were removed, and the source image was left unchanged. The dialogue panel keeps its 820-unit width and uses the source aspect ratio for height.
+
+### Background and UI Scaling Correction (2026-09-24)
+- Replaced `Environment/Test_BG/Test_BG_Image`'s `RawImage` with a uGUI `Image` using the existing `Test_BG` sprite. Enabled Image aspect preservation and kept the full-stretch RectTransform with `AspectRatioFitter` set to `Envelope Parent` at 16:9; the source image was not modified.
+- Set the gameplay UI CanvasScaler to Scale With Screen Size, 1920x1080 reference resolution, and Match Height (1.0). Kept the separate full-screen background canvas scaler at 0.5 so background coverage remains independent of dialogue/player sizing.
+- Expanded the centered layout rect to the sum of its existing panel widths and 36-unit gap, preserving panel dimensions and gap while centering the group at all tested sizes.
+- Validated Play Mode Game view at 1280x720, 1920x1080, 1920x1200, 2560x1080, and 3840x2160. The background filled each view with aspect-preserving crop where needed; the dialogue/player composition stayed centered without overlap or clipping.
+
+### Dialogue / Music Layout States (2026-09-26, in progress)
+- Human constrained this step to responsive layout and animated visibility, with actual RectTransform widths as the geometry source. Playback, visualizer, data assets, HTML inspection, and package changes are excluded.
+- AI read AGENTS.md and IMPLEMENTATION_PLAN.md completely and inspected the saved DeveloperTest scene. AI authored DialogueMusicLayoutState and DialogueMusicLayoutController under Presentation/Runtime. The controller uses width-derived shared targets, Canvas-bound off-screen targets, unscaled-time AnimationCurve transitions, and CanvasGroup input gating.
+- After the Pipeline server became available, AI removed the HorizontalLayoutGroup, wired the controller to the existing panels and Canvas, and added four clearly named temporary state controls plus an EventSystem. The controls remain outside MusicPlayer so they are reachable while it is hidden.
+- The first setup pass failed to persist the two CanvasGroup references. The failure was found from the saved scene and a controller validation error; the controller now deterministically gets or adds a CanvasGroup on each assigned panel before applying visibility or input state.
+- Unity compiled the initial implementation with no compiler errors or warnings. A 1920x1080 Play Mode capture verified the initial BothVisible composition visually. Full automated state/resolution validation could not be completed after the local Pipeline connection became hidden from the sandbox again; no unsupported validation results were claimed.
+- The first temporary controls appeared in Play Mode but did not respond to clicks. Static inspection confirmed the EventSystem, GraphicRaycaster, input backend, raycast targets, and button interactability were configured. The buttons' serialized Boolean callbacks were replaced with explicit parameterless Show/Hide methods to make their UnityEvent wiring straightforward and inspectable.
+- Human review identified a small startup snap after manually positioning the panels. AI traced it to the controller immediately replacing scene-authored positions with width-derived targets in `OnEnable`. The layout now records each panel's authored offset from the responsive two-panel calculation and reapplies that offset to visible targets, preserving visual placement while retaining responsive centering and off-screen transitions.
+- Human requested simpler state testing controls. AI replaced the separate show/hide actions with one dialogue toggle and one music-player toggle, added state-aware visible/hidden button colors, and disabled raycast interception on the full-screen reference overlay so the controls receive pointer input.
