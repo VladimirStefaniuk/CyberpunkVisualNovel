@@ -13,6 +13,9 @@ public sealed class MusicPlayerController : MonoBehaviour
     [Tooltip("Begin playing the selected track when the player initializes.")]
     [SerializeField] private bool playOnStart;
 
+    [Tooltip("Designer-authored playback behavior, including what happens when a track completes.")]
+    [SerializeField] private MusicPlayerConfig playerConfig;
+
     [Header("Dependencies")]
     [Tooltip("Playback service that owns the music AudioSource.")]
     [SerializeField] private MusicPlaybackService playbackService;
@@ -260,12 +263,34 @@ public sealed class MusicPlayerController : MonoBehaviour
         else if (_wasPlaying && _selectedTrackStarted && !isPaused && selectedTrackIsLoaded)
         {
             _completedNaturally = true;
+            if (ShouldPlayNextTrackOnCompletion() && TryPlayNextTrackAfterCompletion())
+                return;
+
             LogDiagnostic($"Natural completion {GetPlaybackSnapshot()}");
         }
 
         view.SetPlaybackState(isPlaying);
         view.SetProgress(GetNormalizedProgress(selectedTrackIsLoaded));
+        view.SetTimeData(GetDisplayedPlaybackTime(selectedTrackIsLoaded), GetDisplayedDuration(selectedTrackIsLoaded));
         _wasPlaying = isPlaying;
+    }
+
+    private float GetDisplayedPlaybackTime(bool selectedTrackIsLoaded)
+    {
+        if (!selectedTrackIsLoaded)
+            return 0f;
+
+        return _completedNaturally ? playbackService.Duration : playbackService.PlaybackTime;
+    }
+
+    private float GetDisplayedDuration(bool selectedTrackIsLoaded)
+    {
+        if (selectedTrackIsLoaded)
+            return playbackService.Duration;
+
+        return _selectedTrack != null && _selectedTrack.AudioClip != null
+            ? _selectedTrack.AudioClip.length
+            : 0f;
     }
 
     private float GetNormalizedProgress(bool selectedTrackIsLoaded)
@@ -277,6 +302,37 @@ public sealed class MusicPlayerController : MonoBehaviour
             return 1f;
 
         return Mathf.Clamp01(playbackService.PlaybackTime / playbackService.Duration);
+    }
+
+    private bool ShouldPlayNextTrackOnCompletion()
+    {
+        return playerConfig != null && playerConfig.PlayNextTrackOnCompletion;
+    }
+
+    private bool TryPlayNextTrackAfterCompletion()
+    {
+        if (playlist == null || _currentTrackIndex < 0)
+            return false;
+
+        int nextTrackIndex = _currentTrackIndex + 1;
+        if (nextTrackIndex >= playlist.Tracks.Count)
+            return false;
+
+        MusicTrackDefinition nextTrack = playlist.Tracks[nextTrackIndex];
+        if (nextTrack == null || nextTrack.AudioClip == null)
+        {
+            Debug.LogWarning($"Cannot automatically play playlist entry {nextTrackIndex}: assign a track with an AudioClip.", this);
+            return false;
+        }
+
+        _currentTrackIndex = nextTrackIndex;
+        _selectedTrack = nextTrack;
+        _selectedTrackStarted = false;
+
+        view.SetTrackInfo(nextTrack.TrackTitle, nextTrack.ArtistName);
+        PlaySelectedTrack();
+        LogDiagnostic($"Natural completion branch=PlayNextTrack index={nextTrackIndex} {GetPlaybackSnapshot()}");
+        return true;
     }
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]

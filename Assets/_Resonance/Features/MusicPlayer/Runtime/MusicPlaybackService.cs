@@ -3,6 +3,9 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public sealed class MusicPlaybackService : MonoBehaviour
 {
+    // FMOD rejects a seek exactly at clip.length. Keep the seek inside the final audio frame.
+    private const float EndOfClipSeekPaddingSeconds = 0.001f;
+
     [Tooltip("Dedicated music source, explicitly assigned. Disable Play On Awake and let this service exclusively control its playback.")]
     [SerializeField] private AudioSource audioSource;
 
@@ -89,8 +92,11 @@ public sealed class MusicPlaybackService : MonoBehaviour
         }
 
         float clampedPosition = Mathf.Clamp01(normalizedPosition);
-        audioSource.time = clampedPosition * duration;
-        LogDiagnostic($"Seek normalized={clampedPosition:F3} {GetPlaybackSnapshot()}");
+        float safeMaximumTime = Mathf.Max(0f, duration - EndOfClipSeekPaddingSeconds);
+        float seekTime = Mathf.Min(clampedPosition * duration, safeMaximumTime);
+
+        audioSource.time = seekTime;
+        LogDiagnostic($"Seek normalized={clampedPosition:F3} time={seekTime:F3} {GetPlaybackSnapshot()}");
         return true;
     }
 

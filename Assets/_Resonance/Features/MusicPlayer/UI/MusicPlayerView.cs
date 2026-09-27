@@ -12,6 +12,9 @@ public sealed class MusicPlayerView : MonoBehaviour
     [Tooltip("Text element that displays the selected artist name.")]
     [SerializeField] private TextMeshProUGUI artistNameText;
 
+    [Tooltip("Text element that displays the current and total playback time.")]
+    [SerializeField] private TextMeshProUGUI timerLabel;
+
     [Header("Playback State")]
     [Tooltip("Visual shown when pressing the control would start or resume playback.")]
     [SerializeField] private GameObject playVisual;
@@ -56,6 +59,22 @@ public sealed class MusicPlayerView : MonoBehaviour
         SetActiveIfNeeded(pauseVisual, isPlaying);
     }
 
+    public void SetTimeData(float playbackTime, float duration)
+    {
+        int currentSeconds = Mathf.Max(0, Mathf.FloorToInt(playbackTime));
+        int totalSeconds = Mathf.Max(0, Mathf.FloorToInt(duration));
+
+        if (timerLabel != null)
+        {
+            timerLabel.SetText(
+                "{0}:{1:00} / <color=#2E3C61>{2}:{3:00}</color>",
+                currentSeconds / 60,
+                currentSeconds % 60,
+                totalSeconds / 60,
+                totalSeconds % 60);
+        }
+    }
+
     public void SetProgress(float normalizedProgress)
     {
         float clampedProgress = Mathf.Clamp01(normalizedProgress);
@@ -72,6 +91,7 @@ public sealed class MusicPlayerView : MonoBehaviour
         SetTrackInfo(string.Empty, string.Empty);
         SetPlaybackState(false);
         SetProgress(0f);
+        SetTimeData(0f, 0f);
     }
 
     private void NotifyProgressChanged(float normalizedProgress)
