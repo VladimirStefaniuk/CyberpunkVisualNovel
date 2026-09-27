@@ -35,13 +35,19 @@ public sealed class MusicPlayerController : MonoBehaviour
     private void Awake()
     {
         if (view != null)
+        {
             view.ProgressChanged += SeekToNormalizedPosition;
+            view.ProgressDragStarted += StartPlaybackForProgressDrag;
+        }
     }
 
     private void OnDestroy()
     {
         if (view != null)
+        {
             view.ProgressChanged -= SeekToNormalizedPosition;
+            view.ProgressDragStarted -= StartPlaybackForProgressDrag;
+        }
     }
 
     private void Start()
@@ -109,6 +115,19 @@ public sealed class MusicPlayerController : MonoBehaviour
 
         // A completed track can be replayed after its handle is dragged away from the end.
         _completedNaturally = false;
+        RefreshPlaybackPresentation();
+    }
+
+    private void StartPlaybackForProgressDrag()
+    {
+        if (!CanControlSelectedTrack() || playbackService.IsPlaying)
+            return;
+
+        if (playbackService.CurrentTrack == _selectedTrack && playbackService.IsPaused)
+            playbackService.Resume();
+        else
+            PlaySelectedTrack();
+
         RefreshPlaybackPresentation();
     }
 

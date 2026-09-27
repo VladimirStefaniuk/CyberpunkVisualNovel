@@ -32,16 +32,32 @@ public sealed class MusicPlayerView : MonoBehaviour
     /// <summary>Raised only when the user changes the progress Slider.</summary>
     public event Action<float> ProgressChanged;
 
+    /// <summary>Raised when the user begins dragging the progress Slider.</summary>
+    public event Action ProgressDragStarted;
+
+    private MusicPlayerProgressDragHandler _progressDragHandler;
+
     private void Awake()
     {
         if (progressSlider != null)
+        {
             progressSlider.onValueChanged.AddListener(NotifyProgressChanged);
+
+            _progressDragHandler = progressSlider.GetComponent<MusicPlayerProgressDragHandler>();
+            if (_progressDragHandler == null)
+                _progressDragHandler = progressSlider.gameObject.AddComponent<MusicPlayerProgressDragHandler>();
+
+            _progressDragHandler.DragStarted += NotifyProgressDragStarted;
+        }
     }
 
     private void OnDestroy()
     {
         if (progressSlider != null)
             progressSlider.onValueChanged.RemoveListener(NotifyProgressChanged);
+
+        if (_progressDragHandler != null)
+            _progressDragHandler.DragStarted -= NotifyProgressDragStarted;
     }
 
     public void SetTrackInfo(string trackTitle, string artistName)
@@ -97,6 +113,11 @@ public sealed class MusicPlayerView : MonoBehaviour
     private void NotifyProgressChanged(float normalizedProgress)
     {
         ProgressChanged?.Invoke(Mathf.Clamp01(normalizedProgress));
+    }
+
+    private void NotifyProgressDragStarted()
+    {
+        ProgressDragStarted?.Invoke();
     }
 
     private static void SetActiveIfNeeded(GameObject target, bool active)
