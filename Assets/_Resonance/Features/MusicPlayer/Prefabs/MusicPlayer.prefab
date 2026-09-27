@@ -1757,6 +1757,7 @@ MonoBehaviour:
   pauseVisual: {fileID: 3653153842331478747}
   progressSlider: {fileID: 2363542609928365621}
   progressFillImage: {fileID: 4269682043007237763}
+  audioVisualizer: {fileID: 8954751769755841691}
 --- !u!1 &9220098301637652176
 GameObject:
   m_ObjectHideFlags: 0

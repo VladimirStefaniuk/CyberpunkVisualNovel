@@ -24,8 +24,22 @@ public sealed class AudioVisualizerView : MonoBehaviour
     [Tooltip("Fallback color used when no bar template is supplied.")]
     [SerializeField] private Color fallbackBarColor = new Color(0.96f, 0.27f, 0.43f, 0.92f);
 
+    [Header("Playback Progress Tint")]
+    [Tooltip("Uses playback progress to distinguish played bars from upcoming bars without changing their audio-reactive heights.")]
+    [SerializeField] private bool progressTintEnabled = true;
+
+    [Tooltip("Tint applied to bars whose center position has been reached by playback progress.")]
+    [SerializeField] private Color playedColor = new Color(0.96f, 0.27f, 0.43f, 0.92f);
+
+    [Tooltip("Tint applied to bars whose center position is still ahead of playback progress.")]
+    [SerializeField] private Color upcomingColor = new Color(0.96f, 0.27f, 0.43f, 0.32f);
+
     private RectTransform[] _bars;
+    private UnityEngine.UI.Image[] _barImages;
+    private Color[] _originalBarColors;
     private int _generatedBarCount;
+    private int _lastPlayedBarCount = -1;
+    private float _playbackProgress;
     private float _lastRootWidth = -1f;
     private bool _reportedInvalidBarPrefab;
 
@@ -51,6 +65,19 @@ public sealed class AudioVisualizerView : MonoBehaviour
                 RectTransform.Axis.Vertical,
                 availableHeight * normalizedValue);
         }
+
+        ApplyProgressTintIfNeeded();
+    }
+
+    /// <summary>Updates presentation-only playback progress; bar heights remain analyzer-driven.</summary>
+    public void SetPlaybackProgress(float normalizedProgress)
+    {
+        float clampedProgress = Mathf.Clamp01(normalizedProgress);
+        if (Mathf.Approximately(_playbackProgress, clampedProgress))
+            return;
+
+        _playbackProgress = clampedProgress;
+        ApplyProgressTintIfNeeded();
     }
 
     private void RebuildBarsIfNeeded()
@@ -64,15 +91,23 @@ public sealed class AudioVisualizerView : MonoBehaviour
 
         ClearGeneratedBars();
         _bars = new RectTransform[requestedBarCount];
+        _barImages = new UnityEngine.UI.Image[requestedBarCount];
+        _originalBarColors = new Color[requestedBarCount];
         _generatedBarCount = requestedBarCount;
 
         for (int index = 0; index < requestedBarCount; index++)
-            _bars[index] = CreateBar(index);
+        {
+            UnityEngine.UI.Image image = CreateBar(index);
+            _bars[index] = image.rectTransform;
+            _barImages[index] = image;
+            _originalBarColors[index] = image.color;
+        }
 
         _lastRootWidth = -1f;
+        _lastPlayedBarCount = -1;
     }
 
-    private RectTransform CreateBar(int index)
+    private UnityEngine.UI.Image CreateBar(int index)
     {
         UnityEngine.UI.Image image = null;
         if (barPrefab != null)
@@ -109,7 +144,7 @@ public sealed class AudioVisualizerView : MonoBehaviour
         bar.anchorMax = new Vector2(0f, 0f);
         bar.pivot = new Vector2(0.5f, 0f);
         bar.sizeDelta = new Vector2(1f, 0f);
-        return bar;
+        return image;
     }
 
     private void UpdateBarLayoutIfNeeded()
@@ -142,8 +177,36 @@ public sealed class AudioVisualizerView : MonoBehaviour
         }
 
         _bars = null;
+        _barImages = null;
+        _originalBarColors = null;
         _generatedBarCount = 0;
+        _lastPlayedBarCount = -1;
         _lastRootWidth = -1f;
+    }
+
+    private void ApplyProgressTintIfNeeded()
+    {
+        if (_barImages == null)
+            return;
+
+        int playedBarCount = progressTintEnabled
+            ? Mathf.Clamp(Mathf.FloorToInt(_playbackProgress * _barImages.Length + 0.5f), 0, _barImages.Length)
+            : -1;
+
+        if (playedBarCount == _lastPlayedBarCount)
+            return;
+
+        for (int index = 0; index < _barImages.Length; index++)
+        {
+            if (_barImages[index] == null)
+                continue;
+
+            _barImages[index].color = progressTintEnabled
+                ? (index < playedBarCount ? playedColor : upcomingColor)
+                : _originalBarColors[index];
+        }
+
+        _lastPlayedBarCount = playedBarCount;
     }
 
     private void OnDestroy()
@@ -154,5 +217,6 @@ public sealed class AudioVisualizerView : MonoBehaviour
     private void OnValidate()
     {
         barSpacing = Mathf.Max(0f, barSpacing);
+        _lastPlayedBarCount = -1;
     }
 }

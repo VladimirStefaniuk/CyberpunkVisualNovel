@@ -29,6 +29,9 @@ public sealed class MusicPlayerView : MonoBehaviour
     [Tooltip("Optional filled Image used for read-only playback progress.")]
     [SerializeField] private UnityEngine.UI.Image progressFillImage;
 
+    [Tooltip("Optional visualizer that receives the controller's normalized playback progress for its per-bar tint.")]
+    [SerializeField] private AudioVisualizerView audioVisualizer;
+
     /// <summary>Raised only when the user changes the progress Slider.</summary>
     public event Action<float> ProgressChanged;
 
@@ -100,6 +103,9 @@ public sealed class MusicPlayerView : MonoBehaviour
 
         if (progressFillImage != null)
             progressFillImage.fillAmount = clampedProgress;
+
+        if (audioVisualizer != null)
+            audioVisualizer.SetPlaybackProgress(clampedProgress);
     }
 
     public void Clear()
