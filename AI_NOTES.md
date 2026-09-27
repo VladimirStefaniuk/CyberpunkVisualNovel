@@ -116,3 +116,9 @@ Human:
 ### Resume Playback When Scrubbing (2026-09-26)
 - Human requested that dragging `PlayerPositionSlider` starts the song when it is not already playing. AI added the smallest event boundary: `MusicPlayerView` relays the uGUI begin-drag event and `MusicPlayerController` resumes the loaded paused track or starts the selected stopped track. Normal slider value changes still perform the existing seek and presentation refresh.
 - The prefab was not modified. At runtime, the view adds its narrow begin-drag relay component to the already-wired Slider, which ensures the callback is received from the Slider itself without changing its existing configuration.
+
+### Dialogue and Music Edge Restore Controls (2026-09-26)
+- Human requested removal of the top debug toggles in favor of direct dialogue clicks to hide that panel and visual edge controls to restore either hidden panel.
+- AI added a small presentation-only `DialoguePanelClickToHide` input adapter and `DialogueMusicEdgeRestoreControls` presenter. The layout controller remains the sole owner of layout state and transitions; the restore presenter only observes that state, fades the edge chevrons, and invokes explicit show methods.
+- The supplied chevron image was added as a Sprite and is mirrored for the right-side music-player restore affordance. The old `DebugLayoutControls` scene hierarchy is disabled rather than deleted, preserving it for recovery during the assignment.
+- After review, the temporary runtime-generated buttons were replaced with explicit `ShowDialogueButton` and `ShowMusicPlayerButton` scene children. The presenter now receives serialized Button and CanvasGroup references, so a designer can replace the Image sprite, adjust edge placement, and tune fade speed in the Inspector.

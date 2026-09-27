@@ -13,6 +13,9 @@ public sealed class DialogueMusicLayoutController : MonoBehaviour
     [Tooltip("The root Canvas RectTransform, used to calculate off-screen destinations.")]
     [SerializeField] private RectTransform canvasBounds;
 
+    [Header("Restore Controls")]
+    [SerializeField] private DialogueMusicEdgeRestoreControls edgeRestoreControls;
+
     [Header("Layout")]
     [SerializeField] private DialogueMusicLayoutState initialState = DialogueMusicLayoutState.BothVisible;
     [Min(0f)] [SerializeField] private float panelGap = 36f;
@@ -35,6 +38,7 @@ public sealed class DialogueMusicLayoutController : MonoBehaviour
     private float _musicAlphaStart;
     private float _elapsed;
     private bool _initialized;
+    private DialogueMusicEdgeRestoreControls _edgeRestoreControls;
 
     /// <summary>The requested layout state, including while its transition is running.</summary>
     public DialogueMusicLayoutState CurrentState { get; private set; }
@@ -61,6 +65,8 @@ public sealed class DialogueMusicLayoutController : MonoBehaviour
             dialogueGroup = GetOrAddCanvasGroup(dialoguePanel);
         if (musicPlayerGroup == null)
             musicPlayerGroup = GetOrAddCanvasGroup(musicPlayer);
+
+        ConfigureInteractionControls();
 
         Canvas.ForceUpdateCanvases();
         if (!_initialized)
@@ -243,5 +249,23 @@ public sealed class DialogueMusicLayoutController : MonoBehaviour
     {
         CanvasGroup group = panel.GetComponent<CanvasGroup>();
         return group != null ? group : panel.gameObject.AddComponent<CanvasGroup>();
+    }
+
+    private void ConfigureInteractionControls()
+    {
+        DialoguePanelClickToHide dialogueClickHandler = dialoguePanel.GetComponent<DialoguePanelClickToHide>();
+        if (dialogueClickHandler == null)
+            dialogueClickHandler = dialoguePanel.gameObject.AddComponent<DialoguePanelClickToHide>();
+        dialogueClickHandler.Initialize(this);
+
+        if (_edgeRestoreControls == null)
+            _edgeRestoreControls = edgeRestoreControls;
+        if (_edgeRestoreControls == null)
+        {
+            Debug.LogError("Dialogue/music layout requires scene-authored edge restore controls.", this);
+            return;
+        }
+
+        _edgeRestoreControls.Initialize(this);
     }
 }
